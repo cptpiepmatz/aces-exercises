@@ -1,0 +1,20 @@
+[project]
+name = "aces-exercises"
+version = "0.0.0"
+description = "Our solutions for the exercises in \"Agent-based Control in Energy Systems\""
+requires-python = ">=3.12"
+dependencies = [
+    "mango-agents>=2.1.0",
+]
+
+[[project.authors]]
+name = "Michael Krah"
+
+[[project.authors]]
+name = "Tim Hesse"
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.7.1",
+]
+
