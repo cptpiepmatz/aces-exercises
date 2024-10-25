@@ -33,7 +33,7 @@
     rows: 1,
     grid.cell(align: left)[
       #number. Exercise for the lecture "#course" \
-      Tutor: #tutor (#link("mailto:" + tutor-mail))
+      Supervisor: #tutor (#link("mailto:" + tutor-mail))
     ],
     grid.cell(align: right, context { here().page() })
   ));
