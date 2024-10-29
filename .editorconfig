@@ -1,0 +1,17 @@
+root = true
+
+[*]
+charset = utf-8
+indent_style = space
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Python settings
+[*.py]
+indent_size = 4
+max_line_length = 88
+
+# Typst settings
+[*.typ]
+indent_size = 2
+max_line_length = 90
