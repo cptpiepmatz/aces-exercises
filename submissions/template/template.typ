@@ -1,4 +1,5 @@
 #import "@preview/oxifmt:0.2.1": strfmt
+#import "@preview/codly:1.0.0": *
 
 #let template(
   course: none,
@@ -84,4 +85,31 @@
 
   if title.has("text") { heading[Task: #title] }
   else { heading[Task] }
+}
+
+#let code(
+  filename: none, 
+  lang: none, 
+  show-numbers: true,
+  start-line: 1,
+  content
+) = {
+  show: codly-init.with()
+  set raw(block: true, lang: lang)
+  codly-offset(offset: start-line - 1)
+  codly(display-name: false)
+
+  let file-header = box(
+    fill: luma(230),
+    inset: (left: 8pt, top: 6pt, bottom: -6pt),
+    width: 100%,
+    strong(filename)
+  )
+
+  block(
+    fill: luma(230),
+    inset: 4pt,
+    radius: 8pt, 
+    file-header + content
+  )
 }
