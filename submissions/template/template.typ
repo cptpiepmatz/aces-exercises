@@ -53,6 +53,15 @@
     it + v(1em);
   };
 
+  set quote(block: true, quotes: false)
+  show quote: it => {
+    block(
+      inset: (top: 0.5em, bottom: 0.5em),
+      stroke: (left: black), 
+      it
+    )
+  }
+
   let title() = {
     let title = "Exercise sheet " + str(number);
     let date = date.display("[month repr:long] [day], [year]");
@@ -111,5 +120,12 @@
     inset: 4pt,
     radius: 8pt, 
     file-header + content
+  )
+}
+
+#let widget(icon, name, color, content) = {
+  let header = strong(text(color, size: 1.1em, icon + " " + name + "\n"))
+  block(
+    stroke: (left: 3pt + color), width: 100%, inset: 2em, outset: -1em, fill: color.transparentize(70%), above: 0.2em, below: 0.2em, header + block(outset: 0em, inset: 0.3em, above: 1em, below: 0pt, content),
   )
 }
