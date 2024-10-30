@@ -1,4 +1,4 @@
-#import "../template/template.typ": template, code
+#import "../template/template.typ": *
 
 #show: template.with(
   course: "Agent-based Control in Energy Systems", 
@@ -85,7 +85,27 @@ any necessary cleanup.
 No further messages should be sent at this stage, as the system is wrapping up.
 
 = Exercise 5
-...
+
+#quote[
+    There is a house with two solar panels and one energy storage; the owner solely wants 
+    to maximize their own energy consumption.
+]
+
+Given only these components and goal, using agents seems to be unreasonable.
+If the owner simply wants to use as much of its own power, the solar panels should always 
+try to keep the storaged charged.
+Any excess will be sold.
+
+#quote[
+    There are multiple houses with solar panels, and each wants to sell surplus energy
+    to the energy market and maximize the profit.
+]
+
+In this situation agents might be a reasonable approach to the problem.
+To maximize the profit it can be useful to communicate or at least observe what other 
+households ingest into the power grid and depending on that, when the grid demands more 
+power, ingest our own energy.
+Agents should learn when it is the best time to ingest our energy.
 
 = Exercise 7
 ...
