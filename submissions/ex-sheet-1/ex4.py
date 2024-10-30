@@ -1,11 +1,10 @@
 import asyncio
 from dataclasses import dataclass
 
-from mango import Agent, AgentAddress, activate, create_tcp_container, json_serializable
+from mango import Agent, AgentAddress, activate, create_tcp_container, json_serializable, JSON
 
-
-@dataclass(repr=False)
 @json_serializable
+@dataclass
 class AgentMessage:
     weather_is_great: bool
 
@@ -17,19 +16,6 @@ class ReflexiveAgent(Agent):
         print(f"[{self.__class__.__name__}] {msg}")
 
     def handle_message(self, content, meta):
-        if meta["sender_id"] is None:
-            return self.handle_environmental_message(content, meta)
-        return self.handle_social_message(content, meta)
-
-    def handle_social_message(self, content, meta):
-        """
-        Handle a message that was sent by another agent.
-
-
-        """
-        pass
-
-    def handle_environmental_message(self, content, meta):
         """
         Handle a message that was sent by the environment.
 
@@ -93,8 +79,8 @@ class DeliberateAgent(Agent):
                 self.log("It stopped raining, I can go outside.")
                 self.is_outside = True
 
-@dataclass(repr=False)
 @json_serializable
+@dataclass
 class WeatherMessage:
     rain: bool
     clouds: bool
@@ -114,7 +100,11 @@ class WeatherMessage:
 
 
 async def main():
-    container = create_tcp_container("localhost:5555")
+    codec = JSON()
+    codec.add_serializer(*AgentMessage.__serializer__())
+    codec.add_serializer(*WeatherMessage.__serializer__())
+
+    container = create_tcp_container(addr="localhost:5555", codec=codec)
 
     reflexive_agent: ReflexiveAgent = container.register(ReflexiveAgent())
     deliberate_agent: DeliberateAgent = container.register(DeliberateAgent())
