@@ -1,4 +1,4 @@
-#import "./template/template.typ": template, code
+#import "../template/template.typ": template, code
 
 #show: template.with(
   course: "Agent-based Control in Energy Systems", 
@@ -9,7 +9,7 @@
   tutor-mail: "rico.schrage@uni-oldenburg.de"
 )
 
-= Exercise 2
+== Exercise 2
 In the Mango framework, Containers are kept separate from Agents to keep the network layer 
 abstracted. 
 Containers handle everything network-related, including sending and receiving messages 
@@ -50,8 +50,39 @@ network configurations.
     ```]
 ]
 
-= Exercise 3
-...
+== Exercise 3
+
+=== `Agent.__init__`
+While Mango doesn’t explicitly define `__init__`, this constructor marks the start of an 
+`Agent`'s lifecycle. 
+In `__init__`, we can set initial values that make each agent unique, even if they share 
+the same class. 
+At this stage, Mango functions are not accessible, as the agent isn’t yet connected to a 
+container.
+
+=== `Agent.on_register`
+At this lifecycle stage, the agent registers with a container, gaining an address, a 
+context (which includes the container), and a scheduler. 
+Now, it can schedule tasks, but message sending is still unavailable, as this only works 
+when the container is fully running. 
+We can, however, retrieve the agent’s address to enable messaging later.
+
+=== `Agent.on_start`
+In this stage, the container the agent lives in is fully running. 
+Now, the agent can send and receive messages within this container, as its inbox task is 
+active.
+However, since other containers may still be initializing, sending messages should be 
+handled with utmost care.
+
+=== `Agent.on_ready`
+At this point, all containers are operational, and every agent can fully send and receive 
+messages. 
+This is a good time to start inter-container communication with other agents.
+
+=== `Agent.shutdown`
+This hook is called during the container’s shutdown process, and it’s the time to handle 
+any necessary cleanup. 
+No further messages should be sent at this stage, as the system is wrapping up.
 
 = Exercise 5
 ...
