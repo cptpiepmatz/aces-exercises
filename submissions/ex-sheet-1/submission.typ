@@ -6,7 +6,8 @@
   group: 8,
   number: 1,
   tutor: "Rico Schrage",
-  tutor-mail: "rico.schrage@uni-oldenburg.de"
+  tutor-mail: "rico.schrage@uni-oldenburg.de",
+  date: datetime(day: 05, month: 11, year: 2024)
 )
 
 == Exercise 2
@@ -23,9 +24,11 @@ This setup makes Agents easier to implement, more focused, and flexible across d
 network configurations.
 
 #block(breakable: false)[
-    Containers also optimize communication when possible. For example, the TCP container 
-    checks if the target’s protocol address matches its own and avoids using the TCP 
-    protocol if they’re the same. 
+    Containers also optimize communication when possible. 
+    For example, the TCP container checks if the target’s protocol address matches its own 
+    and avoids using the TCP protocol if they’re the same. 
+    It is also possible to register multiple agents to a single container, also avoiding 
+    unnecessary communication if the represented agents live on the same hardware.
     This decision-making process, as shown in the following code snippet, boosts 
     performance automatically without requiring Agents to manage these optimizations:
     
@@ -108,5 +111,19 @@ power, ingest our own energy.
 Agents should learn when it is the best time to ingest our energy.
 
 = Exercise 7
-...
+== `HouseAgent`
 
+=== #strong[P]eformance Metric
+- Earninings via `HouseAgent._earning`
+
+=== #strong[E]nvironment
+- Sun Hours via `Report.sun_hours`
+- Energy Price via `Report.kwh_price`
+
+=== #strong[A]ctuators
+- Selling/emptying storage via `HouseAgent.sell`
+
+=== #strong[S]ensors
+Sensors aren't directly modeled in the code for exercise 6.
+It would require some external network connection to read in the energy price.
+The sun hours could just be a modeled value here that doesn't need to be communicated.
