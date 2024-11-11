@@ -4,7 +4,8 @@ version = "0.0.0"
 description = "Our solutions for the exercises in \"Agent-based Control in Energy Systems\""
 requires-python = ">=3.12"
 dependencies = [
-    "mango-agents>=2.1.0",
+    "mango-agents",
+    "networkx>=3.4.2",
 ]
 
 [[project.authors]]
@@ -17,4 +18,7 @@ name = "Tim Hesse"
 dev-dependencies = [
     "ruff>=0.7.1",
 ]
+
+[tool.uv.sources]
+mango-agents = { git = "https://github.com/OFFIS-DAI/mango.git" }
 
