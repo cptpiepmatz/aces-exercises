@@ -1,12 +1,12 @@
 import argparse
 import asyncio
+from asyncio import Future, TaskGroup
 from enum import Enum
+from itertools import chain
+
 import mango
 from mango import Agent, AgentAddress
-from asyncio import Future, TaskGroup
-from dataclasses import dataclass
 from networkx import Graph
-from itertools import chain
 
 
 class NeighborhoodMode(Enum):
