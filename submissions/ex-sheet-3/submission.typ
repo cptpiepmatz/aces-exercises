@@ -61,3 +61,23 @@ Cross-process container behavior is simulated by constructing all known containe
 on the provided `--container` flags, using a consistent scheme for determining agent AIDs. 
 Only the local container is activated, and other processes are expected to wait for 
 instructions from the container running the `TopologyAgent`.
+
+== Exercise 2
+2.
+  The MAS provides acceptable solutions by randomly selecting colors, which means 
+  solutions are also found randomly. 
+  When an agent's color conflicts with another agent's, it picks a new color at random. 
+  The use of the asyncio runtime ensures that color selection avoids data races, 
+  maintaining proper operation.
+
+3.
+  Since the colors are chosen at random and new colors are chosen at random, the MAS has 
+  the potential to eventually find all possible solutions.
+
+4.
+  The MAS terminates when a valid solution is found. 
+  However, if no solution exists, it will run indefinitely. 
+  The system does not guarantee convergence because conflicts are resolved by randomly 
+  picking new colors. 
+  This means the newly chosen color might also create a conflict, making it possible for 
+  the system to revert to a worse state (further from a solution) than before.
