@@ -20,5 +20,5 @@ dev-dependencies = [
 ]
 
 [tool.uv.sources]
-mango-agents = { git = "https://github.com/OFFIS-DAI/mango.git" }
+mango-agents = { git = "https://github.com/OFFIS-DAI/mango.git", tag = "v2.1.2" }
 
