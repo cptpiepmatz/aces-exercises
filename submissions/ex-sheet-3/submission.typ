@@ -62,6 +62,8 @@ on the provided `--container` flags, using a consistent scheme for determining a
 Only the local container is activated, and other processes are expected to wait for 
 instructions from the container running the `TopologyAgent`.
 
+#pagebreak()
+
 == Exercise 2
 2.
   The MAS provides acceptable solutions by randomly selecting colors, which means 
