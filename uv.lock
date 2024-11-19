@@ -17,7 +17,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "mango-agents", git = "https://github.com/OFFIS-DAI/mango.git" },
+    { name = "mango-agents", git = "https://github.com/OFFIS-DAI/mango.git?tag=v2.1.2" },
     { name = "networkx", specifier = ">=3.4.2" },
 ]
 
@@ -35,8 +35,8 @@ wheels = [
 
 [[package]]
 name = "mango-agents"
-version = "2.1.1"
-source = { git = "https://github.com/OFFIS-DAI/mango.git#ed859ce550d246f357bf7a01484b07e06e8b755b" }
+version = "2.1.2"
+source = { git = "https://github.com/OFFIS-DAI/mango.git?tag=v2.1.2#c8ef47b0c0367449fd986b2a43c6ff33a6181ea9" }
 dependencies = [
     { name = "dill" },
     { name = "networkx" },

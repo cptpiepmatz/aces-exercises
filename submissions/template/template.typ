@@ -49,7 +49,12 @@
   );
 
   show heading: it => {
-    set text(16pt);
+    if it.level == 2 {
+      set text(16pt);
+    }
+    else {
+      set text(14pt);
+    }
     it + v(1em);
   };
 
