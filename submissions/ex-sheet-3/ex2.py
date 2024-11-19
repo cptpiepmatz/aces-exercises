@@ -1,68 +1,88 @@
+from mango import Agent, json_serializable, create_tcp_container, JSON, activate, run_with_tcp, per_node, complete_topology
+from dataclasses import dataclass
 import asyncio
 import random
-from asyncio import TaskGroup
-from enum import Enum
-from typing import Any, Self
 
-import mango
-from mango import Agent, AgentAddress
-
-
-class Color(Enum):
-    Red = "red"
-    Blue = "blue"
-    Black = "black"  # in the slides this is a very dark blue, but black is simpler
-
-    @classmethod
-    def pick(cls) -> Self:
-        return random.choice([cls.Red, cls.Blue, cls.Black])
+@json_serializable
+@dataclass
+class UpdatedColorStateMsg:
+    color_state: dict
 
 
 class ColorAgent(Agent):
-    color: Color
-    neighbors: list[AgentAddress]
 
-    def __init__(self):
+    def __init__(self, domain, agents_colors, i):
         super().__init__()
-        self.color = Color.pick()
-        self.neighbors = list()
 
-    def on_ready(self):
-        self.schedule_instant_task(self.share_color())
+        self.domain = domain
+        self.color_state = agents_colors
+        self.id = f'ColorAgent{i}'
+        self.my_color = agents_colors.get(self.id)
 
-    async def share_color(self):
-        async with TaskGroup() as tg:
-            for neighbor in self.neighbors:
-                tg.create_task(self.send_message(self.color, neighbor))
 
-    def handle_message(self, content: Color, meta: dict[str, Any]):
-        if content == self.color:
-            self.color = Color.pick()
-            self.schedule_instant_task(self.share_color())
+    def handle_message(self, content, meta):
+        if isinstance(content, UpdatedColorStateMsg):
+            self.color_state = content.color_state
+            self.change_color()
+
+    def change_color(self):
+        colors_in_use = set(self.color_state.values())
+        available_colors = list(set(self.domain) - colors_in_use)
+        if len(available_colors) == 0:
+            print(f'Solution found: {self.color_state}')
+        elif len(available_colors) == 1:
+            self.my_color = available_colors[0]
+            print(f'{self.id}: Changing my color to {self.my_color}.')
+            self.color_state[self.id] = self.my_color
+            self.send_color_state_msg()
+        elif len(available_colors) == 2:
+            self.my_color = random.choice(available_colors)
+            print(f'{self.id}: Changing my color to {self.my_color}.')
+            self.color_state[self.id] = self.my_color
+            self.send_color_state_msg()
+
+    def send_color_state_msg(self):
+        neighbors = self.neighbors()
+        for neighbor in neighbors:
+            self.schedule_instant_message(content=UpdatedColorStateMsg(self.color_state), receiver_addr=neighbor)
+
+
+def initialize_agents_with_random_colors(colors):
+    # assign random colors until an invalid solution is found
+    while True:
+        agent1_color = random.choice(colors)
+        agent2_color = random.choice(colors)
+        agent3_color = random.choice(colors)
+
+        # set, where duplicate colors are be removed
+        agent_color_set = {agent1_color, agent2_color, agent3_color}
+
+        # check if there is at least one duplicate color
+        if len(agent_color_set) < 3:
+            break
+
+    agents_colors = {"ColorAgent0": agent1_color,
+                     "ColorAgent1": agent2_color,
+                     "ColorAgent2": agent3_color}
+
+    return agents_colors
 
 
 async def main():
-    container = mango.create_tcp_container("localhost:5000")
+    colors = ["red", "blue", "green"]
+    agents_colors = initialize_agents_with_random_colors(colors)
+    print(f'Initial color state: {agents_colors}')
 
-    a: ColorAgent = container.register(ColorAgent())
-    b: ColorAgent = container.register(ColorAgent())
-    c: ColorAgent = container.register(ColorAgent())
+    codec = JSON()
+    codec.add_serializer(*UpdatedColorStateMsg.__serializer__())
 
-    a.neighbors = [b.addr, c.addr]
-    b.neighbors = [a.addr, c.addr]
-    c.neighbors = [a.addr, b.addr]
+    topology = complete_topology(3)
+    for i, node in enumerate(per_node(topology)):
+        agent = ColorAgent(colors, agents_colors, i)
+        node.add(agent)
 
-    print(f"Initial = A: {a.color.value}, B: {b.color.value}, C: {c.color.value}")
-
-    async with mango.activate(container):
-        ab, bc, ca = False, False, False
-        while not (ab and bc and ca):
-            ab = a.color != b.color
-            bc = b.color != c.color
-            ca = c.color != a.color
-            await asyncio.sleep(0.1)
-
-        print(f"Solution = A: {a.color.value}, B: {b.color.value}, C: {c.color.value}")
-
+    async with run_with_tcp(1, *topology.agents):
+        topology.agents[0].change_color()
+        await asyncio.sleep(1)
 
 asyncio.run(main())
