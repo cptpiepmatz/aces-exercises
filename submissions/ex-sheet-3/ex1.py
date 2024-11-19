@@ -91,10 +91,10 @@ class TopologyAgent(Agent):
 
 async def main(
     main_port: int,
-    containers: list[tuple[int, int]],
+    containers: list[tuple[int, int]],  # list of [port, agent_count]
     agent_count: int,
     mode: NeighborhoodMode,
-    topology: bool,
+    topology: bool,  # whether we should construct a topology agent
 ):
     # model other containers to acquire necessary agent addresses
     agents: dict[int, list[Agent]] = {}
