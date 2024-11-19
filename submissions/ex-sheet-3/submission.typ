@@ -65,21 +65,20 @@ instructions from the container running the `TopologyAgent`.
 #pagebreak()
 
 == Exercise 2
+
 2.
-  The MAS provides acceptable solutions by randomly selecting colors, which means 
-  solutions are also found randomly. 
-  When an agent's color conflicts with another agent's, it picks a new color at random. 
-  The use of the asyncio runtime ensures that color selection avoids data races, 
-  maintaining proper operation.
+  The MAS provides acceptable solutions by backtracking.
+  The solution found depends upon the initial instance, which is randomly generated and an invalid solution.
+  The first agent changes its color depending on the colors of the other agents and, then,
+  communicates the new system state to its neighbors. The neighbors change their respective
+  colors accordingly until a solution is found.
 
 3.
-  Since the colors are chosen at random and new colors are chosen at random, the MAS has 
-  the potential to eventually find all possible solutions.
+  Yes, the initial state is random. For all initial random states, the MAS will find a valid
+  solution. Since the initial state is random, we are able to find all possible solutions.
 
 4.
   The MAS terminates when a valid solution is found. 
-  However, if no solution exists, it will run indefinitely. 
-  The system does not guarantee convergence because conflicts are resolved by randomly 
-  picking new colors. 
-  This means the newly chosen color might also create a conflict, making it possible for 
-  the system to revert to a worse state (further from a solution) than before.
+  The search for a solution converges, since a version of domain pruning is used.
+  When changing its color state, an agent checks for available colors, i.e., those
+  not used by other agents. It, then, picks one from the colors still available.
