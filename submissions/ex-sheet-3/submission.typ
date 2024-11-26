@@ -7,7 +7,7 @@
   number: 3,
   tutor: "Rico Schrage",
   tutor-mail: "rico.schrage@uni-oldenburg.de",
-  // date: datetime(day: 05, month: 11, year: 2024)
+  date: datetime(day: 19, month: 11, year: 2024)
 )
 
 == Exercise 1
