@@ -18,6 +18,10 @@ name = "Tim Hesse"
 
 [tool.uv]
 dev-dependencies = [
+    "mypy>=1.14.1",
     "ruff>=0.7.1",
 ]
+
+[tool.mypy]
+disable_error_code = ["import-untyped"]
 
