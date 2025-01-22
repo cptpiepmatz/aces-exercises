@@ -34,7 +34,7 @@ class ReachConnectionResponse:
     switches that would need to be switched to reach connection.
     """
     mid: MessageId
-    switches: list[SwitchId]
+    switches: set[frozenset[SwitchId]]
     reached: bool
 
     @classmethod
