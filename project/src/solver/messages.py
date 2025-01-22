@@ -38,9 +38,40 @@ class ReachConnectionResponse:
     reached: bool
 
     @classmethod
-    def from_request(cls, request: ReachConnectionRequest, reached: bool):
+    def from_request(cls, request: ReachConnectionRequest, reached: bool) -> Self:
         return cls(
             mid=request.mid,
             switches=request.switches,
             reached=reached,
         )
+
+@dataclass
+class SwitchRequest:
+    """
+    A request to switch a switch to connect two busses.
+
+    This request will be propagated through the entire network to reach the necessary 
+    switch agent.
+    The switch agent will then switch the switch if it isn't already switched.
+    In response to that request a `SwitchMessage` will be broadcasted to let other 
+    agents know that this switch is switched.
+    They can then directly stop further propagating the request. 
+    """
+    mid: MessageId
+    switch: SwitchId
+
+@dataclass
+class SwitchMessage:
+    """
+    A status message that the switch agent has switched its switch.
+
+    This message will be broadcasted through the entire network to let everyone know 
+    that the switch is switched.
+    When receiving this message, the corresponding `SwitchRequest` can immediately be 
+    dropped.
+
+    This is not a response type as this message only reacts to the request but does not 
+    specify a direct path back to the requester.
+    """
+    mid: MessageId
+    switch: SwitchId
