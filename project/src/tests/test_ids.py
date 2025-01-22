@@ -21,8 +21,13 @@ def test_copy():
     id2 = copy(id1)
     id3 = deepcopy(id1)
 
+    assert id1 is not id2
     assert id1 == id2
+
+    assert id2 is not id3
     assert id2 == id3
+
+    assert id3 is not id1
     assert id3 == id1
 
 
@@ -43,6 +48,12 @@ def test_duplicate_free():
     assert len({id1, id2, id3}) == 1
 
 
+def test_newtype():
+    test_id = Id("test")
+    assert test_id != test_id._value
+    assert str(test_id) == test_id._value
+
+
 def test_incompatibility():
     switch_id = SwitchId()
     message_id = MessageId()
@@ -52,3 +63,9 @@ def test_incompatibility():
 
     with pytest.raises(IncompatibleIdError):
         sorted([switch_id, message_id])
+
+    try:
+        switch_id == message_id
+    except IncompatibleIdError as e:
+        assert e.left == switch_id
+        assert e.right == message_id
