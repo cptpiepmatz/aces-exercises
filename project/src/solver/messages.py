@@ -58,7 +58,7 @@ class SwitchRequest:
     They can then directly stop further propagating the request. 
     """
     mid: MessageId
-    switch: SwitchId
+    sid: SwitchId
 
 @dataclass
 class SwitchMessage:
