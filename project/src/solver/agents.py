@@ -1,10 +1,16 @@
-import mango
 from asyncio import Event
-import asyncio
-from .ids import SwitchId, MessageId
-from core import BusMeasurement, Switch
 from typing import Any, Iterable
-from .messages import ReachConnectionRequest, ReachConnectionResponse
+
+import mango
+from core import BusMeasurement, Switch
+
+from .ids import MessageId, SwitchId
+from .messages import (
+    ReachConnectionRequest,
+    ReachConnectionResponse,
+    SwitchMessage,
+    SwitchRequest,
+)
 from .util import ZeroBarrier
 
 type Neighbors = set[mango.AgentAddress]
@@ -24,16 +30,20 @@ class Agent(mango.Agent):
         self.resolved = Event()
 
     def handle_message(self, content: Any, meta: dict[str, Any]):
-        loop = asyncio.get_event_loop()
+        self.instant
         match content:
             case ReachConnectionRequest():
-                loop.run_until_complete(
+                self.schedule_instant_task(
                     self.handle_reach_connection_request(content, meta)
                 )
             case ReachConnectionResponse():
-                loop.run_until_complete(
+                self.schedule_instant_task(
                     self.handle_reach_connection_response(content, meta)
                 )
+            case SwitchRequest():
+                self.schedule_instant_task(self.handle_switch_request(content, meta))
+            case SwitchMessage():
+                self.schedule_instant_task(self.handle_switch_message(content, meta))
 
     async def handle_reach_connection_request(
         self,
@@ -45,6 +55,14 @@ class Agent(mango.Agent):
         self,
         response: ReachConnectionResponse,
         meta: dict[str, Any],
+    ): ...
+
+    async def handle_switch_request(
+        self, request: SwitchRequest, meta: dict[str, Any]
+    ): ...
+
+    async def handle_switch_message(
+        self, message: SwitchMessage, meta: dict[str, Any]
     ): ...
 
 
@@ -70,9 +88,7 @@ class BusAgent(Agent):
                 print(f"{response}")
                 # TODO: handle final response
 
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(resolve())
-
+            self.schedule_instant_task(resolve())
 
     async def send_reach_connection_requests_wait_for_response(
         self,
