@@ -12,8 +12,8 @@ def solve(
     bus_measurements: list[BusMeasurement], 
     net: pandapowerNet
 ) -> None:
-    bus_agents = [BusAgent(neighbors=[], bus=bus) for bus in bus_measurements]
-    switch_agents = [SwitchAgent(neighbors=[], switch=switch, sid=SwitchId()) for switch in switches]
+    bus_agents = [BusAgent(neighbors=set(), bus=bus) for bus in bus_measurements]
+    switch_agents = [SwitchAgent(neighbors=set(), switch=switch, sid=SwitchId()) for switch in switches]
 
     # TODO: connect everything
 

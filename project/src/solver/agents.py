@@ -148,9 +148,9 @@ class BusAgent(Agent):
 
     async def handle_reach_connection_response(self, response, meta):
         mid = response.mid
-        if mid not in self.pending_requests:
-            raise  # TODO: some good error here
+        assert mid in self.pending_requests, "got response to no request"
 
+        # merge pending response with received response
         pending_response = self.pending_requests[mid][1]
         pending_response.reached = pending_response.reached or response.reached
         pending_response.switches.update(response.switches)

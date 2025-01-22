@@ -41,7 +41,7 @@ class ReachConnectionResponse:
     def from_request(cls, request: ReachConnectionRequest, reached: bool) -> Self:
         return cls(
             mid=request.mid,
-            switches=request.switches,
+            switches={frozenset(request.switches)},
             reached=reached,
         )
 

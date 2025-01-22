@@ -17,8 +17,9 @@ class Id:
     def __repr__(self):
         return f"{self.__class__.__name__}({self._value})"
 
-    def __eq__(self, other: Self):
+    def __eq__(self, other: object):
         if type(self) is type(other):
+            assert isinstance(other, Id)
             return self._value == other._value
         if isinstance(other, Id):
             raise IncompatibleIdError(self, other)
