@@ -166,7 +166,11 @@ class BusAgent(Agent):
             await self.propagate_message(request, meta)
 
     async def handle_switch_message(self, message, meta):
-        self.requested_switches.discard(message.sid)
+        if message.sid in self.requested_switches:
+            self.requested_switches.remove(message.sid)
+            if not self.requested_switches:
+                self.resolved.set()
+
         if message.mid not in self.seen_messages:
             self.send_message.add(message.mid)
             await self.propagate_message(message, meta)
