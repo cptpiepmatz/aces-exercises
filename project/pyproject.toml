@@ -27,5 +27,4 @@ dev-dependencies = [
 disable_error_code = ["import-untyped"]
 
 [tool.pytest.ini_options]
-testpaths = "tests"
 pythonpath = "src"
