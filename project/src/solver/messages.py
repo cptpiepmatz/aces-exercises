@@ -74,4 +74,4 @@ class SwitchMessage:
     specify a direct path back to the requester.
     """
     mid: MessageId
-    switch: SwitchId
+    sid: SwitchId

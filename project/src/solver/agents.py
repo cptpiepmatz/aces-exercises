@@ -18,6 +18,7 @@ type Neighbors = set[mango.AgentAddress]
 
 class Agent(mango.Agent):
     neighbors: Neighbors
+    seen_messages: set[MessageId]
 
     # in this setup an agent may starts with unresolved issues
     # upon completion, our problem is solved,
@@ -65,14 +66,27 @@ class Agent(mango.Agent):
         self, message: SwitchMessage, meta: dict[str, Any]
     ): ...
 
+    async def broadcast_message(self, message: Any):
+        for neighbor in self.neighbors:
+            await self.send_message(message, neighbor)
+
+    async def propagate_message(self, message: Any, meta: dict[str, Any]):
+        sender = mango.sender_addr(meta)
+        other_neighbors = [n for n in self.neighbors if n != sender]
+        for neighbor in other_neighbors:
+            await self.send_message(message, neighbor)
+
 
 class BusAgent(Agent):
     bus: BusMeasurement
     pending_requests: dict[MessageId, tuple[ZeroBarrier, ReachConnectionResponse]]
+    requested_switches: set[SwitchId]
 
     def __init__(self, *, neighbors: Neighbors, bus: BusMeasurement):
         super().__init__(neighbors=neighbors)
         self.bus = bus
+        self.pending_requests = {}
+        self.requested_switches = set()
 
     def on_ready(self):
         if self.bus.connected:
@@ -142,6 +156,22 @@ class BusAgent(Agent):
         pending_response.switches.update(response.switches)
         self.pending_requests[mid][0].pop()
 
+    async def handle_switch_request(self, request, meta):
+        if request.sid not in self.requested_switches:
+            # we don't need that switch, so we don't need to propagate
+            return
+        
+        if request.mid not in self.seen_messages:
+            self.seen_messages.add(request.mid)
+            await self.propagate_message(request, meta)
+
+    async def handle_switch_message(self, message, meta):
+        self.requested_switches.discard(message.sid)
+        if message.mid not in self.seen_messages:
+            self.send_message.add(message.mid)
+            await self.propagate_message(message, meta)
+
+
 
 class SwitchAgent(Agent):
     switch: Switch
@@ -164,14 +194,22 @@ class SwitchAgent(Agent):
         self.resolved.set()
 
     async def handle_reach_connection_request(self, request, meta):
-        sender = mango.sender_addr(meta)
-        other_neighbors = [n for n in self.neighbors if n != sender]
-        for neighbor in other_neighbors:
-            request.switches.add(self.sid)
-            await self.send_message(request, neighbor)
+        request.switches.add(self.sid)
+        await self.propagate_message(request, meta)
 
     async def handle_reach_connection_response(self, response, meta):
-        sender = mango.sender_addr(meta)
-        other_neighbors = [n for n in self.neighbors if n != sender]
-        for neighbor in other_neighbors:
-            await self.send_message(response, neighbor)
+        await self.propagate_message(response, meta)
+
+    async def handle_switch_request(self, request, meta):
+        if request.sid != self.sid:
+            return await self.propagate_message(request, meta)
+        
+        if not self.switch.is_switched():
+            self.switch.switch(True)
+            await self.broadcast_message(SwitchMessage(mid=MessageId(), sid=self.sid))
+
+    async def handle_switch_message(self, message, meta):
+        if message.mid not in self.seen_messages: 
+            self.seen_messages.add(message.mid)
+            await self.propagate_message(message, meta)
+        
