@@ -7,7 +7,7 @@ from typing import Any, Iterable
 from .messages import ReachConnectionRequest, ReachConnectionResponse
 from .util import ZeroBarrier
 
-type Neighbors = set[mango.AgentAddress]
+Neighbors = set[mango.AgentAddress]
 
 
 class Agent(mango.Agent):
