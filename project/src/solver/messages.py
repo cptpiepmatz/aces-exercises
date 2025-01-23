@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from .ids import MessageId, SwitchId
-# from typing import Self
+from typing import Self
 
 
 @dataclass

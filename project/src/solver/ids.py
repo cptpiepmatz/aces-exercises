@@ -3,10 +3,7 @@ from typing import Self
 from functools import total_ordering
 
 
-<<<<<<< HEAD
-=======
 @total_ordering
->>>>>>> switch-message
 class Id:
     _value: str
 
