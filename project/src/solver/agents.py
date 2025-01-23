@@ -73,7 +73,6 @@ class BusAgent(Agent):
             loop = asyncio.get_event_loop()
             loop.run_until_complete(resolve())
 
-
     async def send_reach_connection_requests_wait_for_response(
         self,
         request: ReachConnectionRequest,
