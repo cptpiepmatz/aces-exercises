@@ -1,10 +1,16 @@
-import mango
 from asyncio import Event
-import asyncio
-from .ids import SwitchId, MessageId
-from core import BusMeasurement, Switch
 from typing import Any, Iterable
-from .messages import ReachConnectionRequest, ReachConnectionResponse
+
+import mango
+from core import BusMeasurement, Switch
+
+from .ids import MessageId, SwitchId
+from .messages import (
+    ReachConnectionRequest,
+    ReachConnectionResponse,
+    SwitchMessage,
+    SwitchRequest,
+)
 from .util import ZeroBarrier
 
 Neighbors = set[mango.AgentAddress]
@@ -12,6 +18,7 @@ Neighbors = set[mango.AgentAddress]
 
 class Agent(mango.Agent):
     neighbors: Neighbors
+    seen_messages: set[MessageId]
 
     # in this setup an agent may starts with unresolved issues
     # upon completion, our problem is solved,
@@ -24,16 +31,19 @@ class Agent(mango.Agent):
         self.resolved = Event()
 
     def handle_message(self, content: Any, meta: dict[str, Any]):
-        loop = asyncio.get_event_loop()
         match content:
             case ReachConnectionRequest():
-                loop.run_until_complete(
+                self.schedule_instant_task(
                     self.handle_reach_connection_request(content, meta)
                 )
             case ReachConnectionResponse():
-                loop.run_until_complete(
+                self.schedule_instant_task(
                     self.handle_reach_connection_response(content, meta)
                 )
+            case SwitchRequest():
+                self.schedule_instant_task(self.handle_switch_request(content, meta))
+            case SwitchMessage():
+                self.schedule_instant_task(self.handle_switch_message(content, meta))
 
     async def handle_reach_connection_request(
         self,
@@ -47,14 +57,35 @@ class Agent(mango.Agent):
         meta: dict[str, Any],
     ): ...
 
+    async def handle_switch_request(
+        self, request: SwitchRequest, meta: dict[str, Any]
+    ): ...
+
+    async def handle_switch_message(
+        self, message: SwitchMessage, meta: dict[str, Any]
+    ): ...
+
+    async def broadcast_message(self, message: Any):
+        for neighbor in self.neighbors:
+            await self.send_message(message, neighbor)
+
+    async def propagate_message(self, message: Any, meta: dict[str, Any]):
+        sender = mango.sender_addr(meta)
+        other_neighbors = [n for n in self.neighbors if n != sender]
+        for neighbor in other_neighbors:
+            await self.send_message(message, neighbor)
+
 
 class BusAgent(Agent):
     bus: BusMeasurement
     pending_requests: dict[MessageId, tuple[ZeroBarrier, ReachConnectionResponse]]
+    requested_switches: set[SwitchId]
 
     def __init__(self, *, neighbors: Neighbors, bus: BusMeasurement):
         super().__init__(neighbors=neighbors)
         self.bus = bus
+        self.pending_requests = {}
+        self.requested_switches = set()
 
     def on_ready(self):
         if self.bus.connected:
@@ -67,11 +98,20 @@ class BusAgent(Agent):
                 response = await self.send_reach_connection_requests_wait_for_response(
                     request, targets
                 )
-                print(f"{response}")
-                # TODO: handle final response
+                option = BusAgent.best_option(response.switches)
+                if option is None:
+                    # TODO: handle this better
+                    raise "no solution found"
+                for sid in option:
+                    await self.broadcast_message(SwitchRequest(mid=MessageId(), sid=sid))
 
-            loop = asyncio.get_event_loop()
-            loop.run_until_complete(resolve())
+            self.schedule_instant_task(resolve())
+
+    @staticmethod
+    def best_option(options: set[frozenset[SwitchId]]) -> None | frozenset[SwitchId]:
+        # sort by length first, then lexicographically by SwitchId
+        sorted_options = sorted(options, key=lambda s: (len(s), sorted(s)))
+        return sorted_options[0] if sorted_options else None
 
     async def send_reach_connection_requests_wait_for_response(
         self,
@@ -117,13 +157,32 @@ class BusAgent(Agent):
 
     async def handle_reach_connection_response(self, response, meta):
         mid = response.mid
-        if mid not in self.pending_requests:
-            raise  # TODO: some good error here
+        assert mid in self.pending_requests, "got response to no request"
 
+        # merge pending response with received response
         pending_response = self.pending_requests[mid][1]
         pending_response.reached = pending_response.reached or response.reached
         pending_response.switches.update(response.switches)
         self.pending_requests[mid][0].pop()
+
+    async def handle_switch_request(self, request, meta):
+        if request.sid not in self.requested_switches:
+            # we don't need that switch, so we don't need to propagate
+            return
+
+        if request.mid not in self.seen_messages:
+            self.seen_messages.add(request.mid)
+            await self.propagate_message(request, meta)
+
+    async def handle_switch_message(self, message, meta):
+        if message.sid in self.requested_switches:
+            self.requested_switches.remove(message.sid)
+            if not self.requested_switches:
+                self.resolved.set()
+
+        if message.mid not in self.seen_messages:
+            self.send_message.add(message.mid)
+            await self.propagate_message(message, meta)
 
 
 class SwitchAgent(Agent):
@@ -147,14 +206,21 @@ class SwitchAgent(Agent):
         self.resolved.set()
 
     async def handle_reach_connection_request(self, request, meta):
-        sender = mango.sender_addr(meta)
-        other_neighbors = [n for n in self.neighbors if n != sender]
-        for neighbor in other_neighbors:
-            request.switches.add(self.sid)
-            await self.send_message(request, neighbor)
+        request.switches.add(self.sid)
+        await self.propagate_message(request, meta)
 
     async def handle_reach_connection_response(self, response, meta):
-        sender = mango.sender_addr(meta)
-        other_neighbors = [n for n in self.neighbors if n != sender]
-        for neighbor in other_neighbors:
-            await self.send_message(response, neighbor)
+        await self.propagate_message(response, meta)
+
+    async def handle_switch_request(self, request, meta):
+        if request.sid != self.sid:
+            return await self.propagate_message(request, meta)
+
+        if not self.switch.is_switched():
+            self.switch.switch(True)
+            await self.broadcast_message(SwitchMessage(mid=MessageId(), sid=self.sid))
+
+    async def handle_switch_message(self, message, meta):
+        if message.mid not in self.seen_messages:
+            self.seen_messages.add(message.mid)
+            await self.propagate_message(message, meta)
