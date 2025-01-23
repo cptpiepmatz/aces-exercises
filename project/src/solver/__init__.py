@@ -72,7 +72,7 @@ def map_busmeasurements_and_switches_to_nodes(
     bus_measurements: list[BusMeasurement],
     switches: list[Switch]
 ) -> nx.Graph:
-    element_to_switch_index = {}
+    element_to_switch_index: dict[int, int] = {}
     for index, _ in net.switch.iterrows():
         if not net.switch.loc[index, 'closed']:
             element = net.switch.loc[index, 'element']
@@ -108,12 +108,12 @@ def create_agents(communication_topology: nx.Graph) -> list[Agent]:
             neighbors = communication_topology.nodes[node].get('neighbors')
             bus_measurement = communication_topology.nodes[node].get(
                     'bus_measurement')
-            bus_agent = BusAgent(neighbors=neighbors, bus=bus_measurement)
+            bus_agent = BusAgent(neighbors=set(neighbors), bus=bus_measurement)
             agents.append(bus_agent)
         elif node[0] == 'switch':
             neighbors = communication_topology.nodes[node].get('neighbors')
             switch = communication_topology.nodes[node].get('switch')
-            switch_agent = SwitchAgent(neighbors=neighbors, switch=switch,
+            switch_agent = SwitchAgent(neighbors=set(neighbors), switch=switch,
                                        sid=SwitchId())
             agents.append(switch_agent)
 
