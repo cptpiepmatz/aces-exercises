@@ -118,6 +118,6 @@ def create_agents(communication_topology: nx.Graph) -> list[Agent]:
 
 
 async def run_container(agents: list[Agent]):
-    async with mango.run_with_tcp(1, *agents):
+    async with mango.run_with_tcp(1, *agents, addr=ADDRESS):
         for agent in agents:
             await agent.resolved.wait()

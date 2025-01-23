@@ -93,7 +93,7 @@ class BusAgent(Agent):
         else:
 
             async def resolve():
-                request = ReachConnectionRequest(mid=MessageId(), switches=[])
+                request = ReachConnectionRequest(mid=MessageId(), switches=set())
                 targets = self.neighbors
                 response = await self.send_reach_connection_requests_wait_for_response(
                     request, targets
