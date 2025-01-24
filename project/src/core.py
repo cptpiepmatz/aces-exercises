@@ -26,7 +26,7 @@ def create_test_network():
     net = simbench.get_simbench_net("1-LV-semiurb4--2-sw")
 
     net.line.loc[int(random.random()*len(net.line)), "in_service"] = False
-    
+
     create_switchable_line_between(net, 11, 12)
     create_switchable_line_between(net, 23, 1)
     create_switchable_line_between(net, 26, 33)
@@ -36,7 +36,7 @@ def create_test_network():
     create_switchable_line_between(net, 34, 9)
     create_switchable_line_between(net, 15, 30)
     create_switchable_line_between(net, 10, 37)
-    
+
     return net
 
 def evaluate_result_obtained(row):
@@ -46,7 +46,7 @@ def evaluate(net, log_result=False):
     # Running the ordinary power flow of pandapower, here most of the constraints are included
     # i.e. power balance equations, voltage and power flow equations, ...
     runpp(net)
-    
+
     net.res_bus["connected?"] = net.res_bus.apply(evaluate_result_obtained, axis=1)
     connected = net.res_bus["connected?"].all()
 
@@ -65,8 +65,8 @@ class BusMeasurement:
 
     @property
     def connected(self):
-        return math.isnan(self.__vm_pu_get_func())
-    
+        return not math.isnan(self.__vm_pu_get_func())
+
     def __str__(self) -> str:
         return f"connected: {self.connected}"
 
@@ -79,7 +79,7 @@ class Switch:
         global num_switches
         num_switches += 1
         self.__set_switch(new_value)
-    
+
     def is_switched(self):
         return self.__get_switch()
 
@@ -92,6 +92,9 @@ def set_value(net, index):
 def get_value(net, index):
     return lambda: net.switch.loc[index, "closed"]
 
+def get_vm_pu_value(net, index):
+    return lambda: net.res_bus.loc[index, "vm_pu"]
+
 def to_components(net: pandapowerNet):
     active_components = []
     passive_components = []
@@ -100,6 +103,6 @@ def to_components(net: pandapowerNet):
         if not net.switch.loc[index, "closed"]:
             active_components.append(Switch((get_value(net, index), set_value(net, index))))
     for index, _ in net.bus.iterrows():
-        component = BusMeasurement(lambda: net.res_bus.loc[index, "vm_pu"])
+        component = BusMeasurement(get_vm_pu_value(net, index))
         passive_components.append(component)
     return active_components, passive_components

@@ -5,6 +5,8 @@ from solver.ids import SwitchId
 import networkx as nx
 import mango
 import asyncio
+import matplotlib.pyplot as plt
+
 
 import logging
 
@@ -15,17 +17,43 @@ log = logging.getLogger(__name__)
 def solve(
     switches: list[Switch], bus_measurements: list[BusMeasurement], net: pandapowerNet
 ) -> None:
+
     open_network = topology.create_nxgraph(net)
     closed_network = topology.create_nxgraph(net, respect_switches=False)
 
     communication_topology = create_communication_topology(open_network, closed_network)
+    # Draw the graph
+    pos = nx.circular_layout(communication_topology)  # Layout for node positions
+    nx.draw(communication_topology, pos, with_labels=True, node_color='lightblue', edge_color='gray',
+            node_size=500, font_size=10)
+    plt.savefig("communication_topology.png", dpi=300,
+                bbox_inches='tight')  # Save with high resolution
+    plt.close()
+
+    pos = nx.circular_layout(open_network)
+    nx.draw(open_network, pos, with_labels=True, node_color='lightblue',
+            edge_color='gray',
+            node_size=500, font_size=10)
+    plt.savefig("open_network.png", dpi=300,
+                bbox_inches='tight')  # Save with high resolution
+    plt.close()
+
+    pos = nx.circular_layout(closed_network)
+    nx.draw(closed_network, pos, with_labels=True, node_color='lightblue',
+            edge_color='gray',
+            node_size=500, font_size=10)
+    plt.savefig("closed_network.png", dpi=300,
+                bbox_inches='tight')  # Save with high resolution
+    plt.close()
+
     communication_topology = map_busmeasurements_and_switches_to_nodes(
         communication_topology, net, bus_measurements, switches
     )
     agents = create_agents(communication_topology)
 
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(run_container(agents))
+    #loop = asyncio.get_event_loop()
+    #loop.run_until_complete(run_container(agents))
+    asyncio.run(run_container(agents))
 
     # This creates a topology representing the actual physical network
     graph = topology.create_nxgraph(net)
@@ -71,9 +99,14 @@ def map_busmeasurements_and_switches_to_nodes(
             element = net.switch.loc[index, "element"]
             element_to_switch_index[element] = len(element_to_switch_index)
 
+    bus_to_bus_index: dict[int, int] = {}
+    for index, _ in net.bus.iterrows():
+        bus_to_bus_index[index] = len(bus_to_bus_index)
+
     for node, data in communication_topology.nodes(data=True):
         if node[0] == "bus":
-            bus_index = node[1]
+            bus = node[1]
+            bus_index = bus_to_bus_index[bus]
             communication_topology.nodes[node]["bus_measurement"] = bus_measurements[
                 bus_index
             ]
@@ -85,10 +118,12 @@ def map_busmeasurements_and_switches_to_nodes(
     return communication_topology
 
 
-def create_agents(communication_topology: nx.Graph) -> list[Agent]:
-    for i, node in enumerate(communication_topology.nodes):
+def create_agents(communication_topology: nx.Graph) -> dict[str, Agent]:
+    for node, data in communication_topology.nodes(data=True):
+        agent_id = f"{node[0]}-{node[1]}-agent"
+        communication_topology.nodes[node]["agent_id"] = agent_id
         communication_topology.nodes[node]["agent_address"] = mango.AgentAddress(
-            ADDRESS, f"agent{i}"
+            ADDRESS, agent_id
         )
 
     for node in communication_topology.nodes:
@@ -99,25 +134,33 @@ def create_agents(communication_topology: nx.Graph) -> list[Agent]:
         ]
         communication_topology.nodes[node]["neighbors"] = neighbors
 
-    agents = []
+    agents: dict[str, Agent] = {}
     for node, data in communication_topology.nodes(data=True):
         if node[0] == "bus":
             neighbors = communication_topology.nodes[node].get("neighbors")
             bus_measurement = communication_topology.nodes[node].get("bus_measurement")
             bus_agent = BusAgent(neighbors=set(neighbors), bus=bus_measurement)
-            agents.append(bus_agent)
+            agent_id = communication_topology.nodes[node].get("agent_id")
+            agents[agent_id] = bus_agent
         elif node[0] == "switch":
             neighbors = communication_topology.nodes[node].get("neighbors")
             switch = communication_topology.nodes[node].get("switch")
             switch_agent = SwitchAgent(
                 neighbors=set(neighbors), switch=switch, sid=SwitchId()
             )
-            agents.append(switch_agent)
+            agent_id = communication_topology.nodes[node].get("agent_id")
+            agents[agent_id] = switch_agent
 
     return agents
 
 
-async def run_container(agents: list[Agent]):
-    async with mango.run_with_tcp(1, *agents, addr=ADDRESS):
-        for agent in agents:
+async def run_container(agents: dict[str, Agent]):
+    container = mango.create_tcp_container(addr=ADDRESS)
+    for aid, agent in agents.items():
+        container.register(agent, aid)
+    async with mango.activate(container):
+        for agent in agents.values():
             await agent.resolved.wait()
+    #async with mango.run_with_tcp(1, *agents, addr=ADDRESS):
+    #    for agent in agents:
+    #        await agent.resolved.wait()
