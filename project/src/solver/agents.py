@@ -116,9 +116,8 @@ class BusAgent(Agent):
                 self.log(f'Selecting best option: {option}.')
                 if option is None:
                     self.resolved.set()
-                    self.log('No solution found.')
-                    # TODO: inform others that there is no solution
-                    #raise "no solution found"
+                    self.log("No solution found.")
+                    return
                 for sid in option:
                     self.requested_switches.add(sid)
                     self.log(f'Broadcasting best option to {sid}')
