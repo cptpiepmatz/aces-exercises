@@ -40,9 +40,12 @@ class ReachConnectionResponse:
 
     @classmethod
     def from_request(cls, request: ReachConnectionRequest, reached: bool) -> Self:
+        if reached:
+            assert request.switches, "could not have reached if no switches were used"
+
         return cls(
             mid=request.mid,
-            switches={frozenset(request.switches)},
+            switches={frozenset(request.switches)} if reached else set(),
             reached=reached,
         )
 
