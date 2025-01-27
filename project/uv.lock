@@ -340,6 +340,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pydot"
+version = "3.0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pyparsing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/66/dd/e0e6a4fb84c22050f6a9701ad9fd6a67ef82faa7ba97b97eb6fdc6b49b34/pydot-3.0.4.tar.gz", hash = "sha256:3ce88b2558f3808b0376f22bfa6c263909e1c3981e2a7b629b65b451eee4a25d", size = 168167 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b0/5f/1ebfd430df05c4f9e438dd3313c4456eab937d976f6ab8ce81a98f9fb381/pydot-3.0.4-py3-none-any.whl", hash = "sha256:bfa9c3fc0c44ba1d132adce131802d7df00429d1a79cc0346b0a5cd374dbe9c6", size = 35776 },
+]
+
+[[package]]
 name = "pyparsing"
 version = "3.2.1"
 source = { registry = "https://pypi.org/simple" }
@@ -406,6 +418,7 @@ dependencies = [
     { name = "networkx" },
     { name = "numba" },
     { name = "pandapower" },
+    { name = "pydot" },
     { name = "simbench" },
 ]
 
@@ -424,6 +437,7 @@ requires-dist = [
     { name = "networkx", specifier = ">=3.4.2" },
     { name = "numba", specifier = ">=0.60.0" },
     { name = "pandapower", specifier = ">=2.14.11" },
+    { name = "pydot", specifier = ">=3.0.4" },
     { name = "simbench", specifier = ">=1.5.3" },
 ]
 

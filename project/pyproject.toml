@@ -8,6 +8,7 @@ dependencies = [
     "networkx>=3.4.2",
     "numba>=0.60.0",
     "pandapower>=2.14.11",
+    "pydot>=3.0.4",
     "simbench>=1.5.3",
 ]
 
