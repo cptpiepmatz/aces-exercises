@@ -31,8 +31,13 @@ class Agent(mango.Agent):
         self.resolved = Event()
         self.seen_messages = set()
 
-    def log(self, msg):
-        print(f'{self.aid}: {msg}')
+    def log(self, *msg):
+        match len(msg):
+            case 1: 
+                print(f"{self.aid}: {msg[0]}")
+            case _:
+                print(f"{self.aid}:")
+                [print(f"\t{msg}") for msg in msg]
 
     def handle_message(self, content: Any, meta: dict[str, Any]):
         match content:
