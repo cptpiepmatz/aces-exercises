@@ -186,9 +186,8 @@ class BusAgent(Agent):
         zero_barrier, pending_response = self.pending_requests[mid]
         # merge pending response with received response
         pending_response.reached = pending_response.reached or response.reached
-        pending_response.switches = response.switches
-        self.pending_requests[mid] = (zero_barrier, pending_response)
-        self.pending_requests[mid][0].pop()
+        pending_response.switches.update(response.switches)
+        zero_barrier.pop()
         #self.log(f'Received response: {pending_response.switches}')
 
     async def handle_switch_request(self, request, meta):
