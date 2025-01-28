@@ -25,7 +25,10 @@ def create_switchable_line_between(net, from_bus, to_bus):
 def create_test_network():
     net = simbench.get_simbench_net("1-LV-semiurb4--2-sw")
 
-    net.line.loc[int(random.random()*len(net.line)), "in_service"] = False
+    broken_line = int(random.random()*len(net.line))
+    broken_line = 6
+    print(f"{broken_line=}") 
+    net.line.loc[broken_line, "in_service"] = False
 
     create_switchable_line_between(net, 11, 12)
     create_switchable_line_between(net, 23, 1)
