@@ -204,12 +204,6 @@ class BusAgent(Agent):
         # we aren't connected and haven't seen the message yet, let's propagate
         other_neighbors = [n for n in self.neighbors if n != sender]
 
-        self.log(
-            f"Request {request.mid}",
-            f"From {sender.aid}",
-            f"Sending response to {[n.aid for n in other_neighbors]}",
-        )
-
         response = await self.send_reach_connection_requests_wait_for_response(
             request, other_neighbors
         )
