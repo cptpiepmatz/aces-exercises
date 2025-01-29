@@ -26,7 +26,7 @@ def create_test_network():
     net = simbench.get_simbench_net("1-LV-semiurb4--2-sw")
 
     broken_line = int(random.random()*len(net.line))
-    broken_line = 6
+    # broken_line = 6
     print(f"{broken_line=}") 
     net.line.loc[broken_line, "in_service"] = False
 
