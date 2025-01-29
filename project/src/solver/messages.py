@@ -2,9 +2,12 @@ from dataclasses import dataclass
 from .ids import MessageId, SwitchId
 from typing import Self
 
+@dataclass
+class Message:
+    mid: MessageId
 
 @dataclass
-class ReachConnectionRequest:
+class ReachConnectionRequest(Message):
     """
     Request to reach a connection.
 
@@ -16,12 +19,12 @@ class ReachConnectionRequest:
     Switch agents add their switch id to this request in order to track which switches
     have to connect to re-establish a connection.
     """
-    mid: MessageId
+    bridged: bool
     switches: set[SwitchId]
 
 
 @dataclass
-class ReachConnectionResponse:
+class ReachConnectionResponse(Message):
     """
     Response to a `ReachConnectionRequest`.
 
@@ -50,7 +53,7 @@ class ReachConnectionResponse:
         )
 
 @dataclass
-class SwitchRequest:
+class SwitchRequest(Message):
     """
     A request to switch a switch to connect two busses.
 
@@ -61,11 +64,10 @@ class SwitchRequest:
     agents know that this switch is switched.
     They can then directly stop further propagating the request. 
     """
-    mid: MessageId
     sid: SwitchId
 
 @dataclass
-class SwitchMessage:
+class SwitchMessage(Message):
     """
     A status message that the switch agent has switched its switch.
 
@@ -77,5 +79,4 @@ class SwitchMessage:
     This is not a response type as this message only reacts to the request but does not 
     specify a direct path back to the requester.
     """
-    mid: MessageId
     sid: SwitchId
