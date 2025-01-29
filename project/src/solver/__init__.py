@@ -32,56 +32,56 @@ def solve(
     def layouter(network: nx.Graph) -> dict:
         return nx.nx_pydot.graphviz_layout(network)
 
-    pos = layouter(communication_topology)  # Layout for node positions
-    nx.draw(
-        communication_topology,
-        pos,
-        with_labels=True,
-        node_color="lightblue",
-        edge_color="gray",
-        node_size=500,
-        font_size=10,
-    )
-    plt.savefig(
-        "communication_topology.png",
-        dpi=300,
-        bbox_inches="tight",
-    )  # Save with high resolution
-    plt.close()
+    # pos = layouter(communication_topology)  # Layout for node positions
+    # nx.draw(
+    #     communication_topology,
+    #     pos,
+    #     with_labels=True,
+    #     node_color="lightblue",
+    #     edge_color="gray",
+    #     node_size=500,
+    #     font_size=10,
+    # )
+    # plt.savefig(
+    #     "communication_topology.png",
+    #     dpi=300,
+    #     bbox_inches="tight",
+    # )  # Save with high resolution
+    # plt.close()
 
-    pos = layouter(open_network)
-    nx.draw(
-        open_network,
-        pos,
-        with_labels=True,
-        node_color="lightblue",
-        edge_color="gray",
-        node_size=500,
-        font_size=10,
-    )
-    plt.savefig(
-        "open_network.png",
-        dpi=300,
-        bbox_inches="tight",
-    )  # Save with high resolution
-    plt.close()
+    # pos = layouter(open_network)
+    # nx.draw(
+    #     open_network,
+    #     pos,
+    #     with_labels=True,
+    #     node_color="lightblue",
+    #     edge_color="gray",
+    #     node_size=500,
+    #     font_size=10,
+    # )
+    # plt.savefig(
+    #     "open_network.png",
+    #     dpi=300,
+    #     bbox_inches="tight",
+    # )  # Save with high resolution
+    # plt.close()
 
-    pos = layouter(closed_network)
-    nx.draw(
-        closed_network,
-        pos,
-        with_labels=True,
-        node_color="lightblue",
-        edge_color="gray",
-        node_size=500,
-        font_size=10,
-    )
-    plt.savefig(
-        "closed_network.png",
-        dpi=300,
-        bbox_inches="tight",
-    )  # Save with high resolution
-    plt.close()
+    # pos = layouter(closed_network)
+    # nx.draw(
+    #     closed_network,
+    #     pos,
+    #     with_labels=True,
+    #     node_color="lightblue",
+    #     edge_color="gray",
+    #     node_size=500,
+    #     font_size=10,
+    # )
+    # plt.savefig(
+    #     "closed_network.png",
+    #     dpi=300,
+    #     bbox_inches="tight",
+    # )  # Save with high resolution
+    # plt.close()
 
     communication_topology = map_busmeasurements_and_switches_to_nodes(
         communication_topology, net, bus_measurements, switches
