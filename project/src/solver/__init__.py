@@ -226,8 +226,8 @@ def create_agents(communication_topology: nx.Graph) -> dict[str, Agent]:
 
 def trace_container_messages(
     container: mango.container.core.Container,
-) -> dict[MessageId, tuple[str, str, Message]]:
-    transfers: dict[MessageId, tuple[str, str, Message]] = {}
+) -> dict[MessageId, list[tuple[str, str, Message]]]:
+    transfers: dict[MessageId, list[tuple[str, str, Message]]] = {}
 
     # proxy original send_message to get message content
     original_send_message = container.send_message
