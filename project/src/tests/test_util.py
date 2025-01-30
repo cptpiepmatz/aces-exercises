@@ -10,7 +10,7 @@ async def test_zero_barrier():
 
     # initial state
     assert barrier._pending == 0
-    assert not barrier._event.is_set()
+    assert barrier._event.is_set()
 
     # push increments _pending and clears _event
     barrier.push()
