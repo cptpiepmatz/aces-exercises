@@ -5,6 +5,12 @@ from functools import total_ordering
 
 @total_ordering
 class Id:
+    """
+    Type-safe IDs to ensure that IDs aren't intertangled throughout the codebase.
+
+    Comparing two IDs of different types will throw an `IncompatibleIdError` to ensure 
+    that no two ID types are used in the same location.
+    """
     _value: str
 
     def __init__(self, prefix: str):

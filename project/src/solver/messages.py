@@ -4,6 +4,7 @@ from typing import Self
 
 @dataclass
 class Message:
+    """Base Message class to easily abstract that messages have a message id."""
     mid: MessageId
 
 @dataclass
@@ -19,8 +20,12 @@ class ReachConnectionRequest(Message):
     Switch agents add their switch id to this request in order to track which switches
     have to connect to re-establish a connection.
     """
+
     bridged: bool
+    "Initially this is set to `False`. When crossing a switch, this is set to `True`."
+
     switches: set[SwitchId]
+    "Switches that were passed in the request chain."
 
 
 @dataclass
@@ -37,7 +42,6 @@ class ReachConnectionResponse(Message):
     The `switches` describe a set of all options and each option contains all the 
     switches that would need to be switched to reach connection.
     """
-    mid: MessageId
     switches: set[frozenset[SwitchId]]
     reached: bool
 

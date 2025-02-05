@@ -1,2 +1,4 @@
 *.zip
+*.png
+transfers.toml
 __pycache__/

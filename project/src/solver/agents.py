@@ -18,13 +18,25 @@ Neighbors = set[mango.AgentAddress]
 
 
 class Agent(mango.Agent):
+    """
+    Base agent class extending the Mango Agent to simplify implement the `BusAgent` and
+    `SwitchAgent`.
+
+    Mainly this class provides the `log` method to easily log messages from agents and
+    the different handlers for our messages which all are marked as async to allow the
+    usage of `send_message` which requires an async context.
+    """
+
     neighbors: Neighbors
     seen_messages: set[MessageId]
 
-    # in this setup an agent may starts with unresolved issues
-    # upon completion, our problem is solved,
-    # using futures allows awaiting until everyone is happy
     resolved: Event
+    """
+    An agent is resolved when it doesn't need any further changes to be fully connected.
+
+    Using this event allows external code to properly wait until every agent is done 
+    working.
+    """
 
     def __init__(self, *, neighbors: Neighbors):
         super().__init__()
@@ -33,6 +45,13 @@ class Agent(mango.Agent):
         self.seen_messages = set()
 
     def log(self, *msg):
+        """
+        Log a message with the agent aid prefixed.
+
+        On multiple messages this will format the output to have multiple indented
+        lines to more easily distinguish which agent posted what.
+        This is helpful in situations when the provided context gets quite large.
+        """
         match len(msg):
             case 1:
                 print(f"{self.aid}: {msg[0]}")
@@ -41,6 +60,12 @@ class Agent(mango.Agent):
                 [print(f"\t{msg}") for msg in msg]
 
     def handle_message(self, content: Any, meta: dict[str, Any]):
+        """
+        Schedule message handlers for all of our message types.
+
+        This allows using async message handlers without having to call
+        `schedule_instant_task` everywhere in the derived agents.
+        """
         match content:
             case ReachConnectionRequest():
                 self.schedule_instant_task(
@@ -87,15 +112,23 @@ class Agent(mango.Agent):
 
 
 class BusAgent(Agent):
+    """
+    Agent placed on bus nodes.
+
+    This agent represents a bus and contains a `BusMeasurement` to interact with the
+    pandapower network.
+    `on_ready` it checks if it is connected and if not, it starts resolving the problem
+    by sending a `ReachConnectionRequest` if it has any members to find a way to connect
+    with the rest of the network again.
+    """
+
     bus: BusMeasurement
-    deferred_requests: list[tuple[mango.AgentAddress, ReachConnectionRequest]]
     pending_requests: dict[MessageId, tuple[ZeroBarrier, ReachConnectionResponse]]
     requested_switches: set[SwitchId]
 
     def __init__(self, *, neighbors: Neighbors, bus: BusMeasurement):
         super().__init__(neighbors=neighbors)
         self.bus = bus
-        self.deferred_requests = []
         self.pending_requests = {}
         self.requested_switches = set()
 
@@ -109,6 +142,15 @@ class BusAgent(Agent):
         else:
 
             async def resolve():
+                """
+                Try to resolve the connection issue.
+
+                Resolve the connection issue by first sending out
+                `ReachConnectionRequest`s across the network.
+                When all responses reached us back again, we can determine the best
+                option and either report that no option was found to send request to
+                all the necessary switches to reconnect again.
+                """
                 request = ReachConnectionRequest(
                     mid=MessageId(), bridged=False, switches=set()
                 )
@@ -122,7 +164,6 @@ class BusAgent(Agent):
                 if option is None:
                     self.resolved.set()
                     self.log("No solution found.")
-                    await self.respond_deferred_requests(False)
                     return
                 for sid in option:
                     self.requested_switches.add(sid)
@@ -130,14 +171,21 @@ class BusAgent(Agent):
                     await self.broadcast_message(
                         SwitchRequest(mid=MessageId(), sid=sid)
                     )
-                await self.respond_deferred_requests(True)
 
             self.schedule_instant_task(resolve())
             self.log("Resolving connection issue...")
 
     @staticmethod
     def best_option(options: set[frozenset[SwitchId]]) -> None | frozenset[SwitchId]:
-        # sort by length first, then lexicographically by SwitchId
+        """
+        Search for the best option give a set of options.
+
+        An option is preferred if it shorter than another one.
+        Then the IDs are used to get the best response.
+        IDs have an order but that order itself is irrelevant as each switch is equally
+        good to enable again.
+        We just need to make sure that every agent decides on the same switch.
+        """
         sorted_options = sorted(options, key=lambda s: (len(s), sorted(s)))
         return sorted_options[0] if sorted_options else None
 
@@ -146,6 +194,13 @@ class BusAgent(Agent):
         request: ReachConnectionRequest,
         targets: Iterable[mango.AgentAddress],
     ) -> ReachConnectionResponse:  # merged response data
+        """
+        Send a `ReachConnectionRequest` to all targets and wait for their responses and 
+        merging them.
+
+        The merging behavior is implemented in the `handle_reach_connection_response` 
+        method. 
+        """
         barrier = ZeroBarrier()
         response = ReachConnectionResponse.from_request(request, False)
         self.pending_requests[request.mid] = (barrier, response)
@@ -161,11 +216,6 @@ class BusAgent(Agent):
             self.log("response timed out, will respond with intermediate results")
         return response
 
-    async def respond_deferred_requests(self, reached: bool):
-        for addr, req in self.deferred_requests:
-            res = ReachConnectionResponse.from_request(req, reached)
-            await self.send_message(res, addr)
-
     async def handle_reach_connection_request(self, request, meta):
         sender = mango.sender_addr(meta)
 
@@ -180,30 +230,16 @@ class BusAgent(Agent):
             response = ReachConnectionResponse.from_request(request, False)
             await self.send_message(response, sender)
             return
-        
+
+        # the request bridged over a switch but we aren't connected, return this as a 
+        # dead end
         if request.bridged:
             res = ReachConnectionResponse.from_request(request, False)
             await self.send_message(res, sender)
             return
 
-        # TODO: handle more than 2 disconnects here
-
-        # # defer bridged request if we cannot answer them right away
-        # if request.bridged:
-        #     self.deferred_requests.append((sender, request))
-        #     return
-
-        # # if we get request where we already got a bridge request, respond with `False`
-        # deferred_requests = [req[1] for req in self.deferred_requests if req[1].mid == request.mid]
-        # self.log(self.deferred_requests)
-        # for req in deferred_requests:
-        #     res = ReachConnectionResponse.from_request(req, False)
-        #     await self.send_message(res, sender)
-        #     # do not return, we still have work to do
-
         # we aren't connected and haven't seen the message yet, let's propagate
         other_neighbors = [n for n in self.neighbors if n != sender]
-
         response = await self.send_reach_connection_requests_wait_for_response(
             request, other_neighbors
         )

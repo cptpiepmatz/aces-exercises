@@ -2,6 +2,14 @@ from asyncio import Event
 
 
 class ZeroBarrier:
+    """
+    Async primitive to wait until enough other events happened.
+
+    This barrier should be initialized and then pushed up with how many events should 
+    be waited for before continuing.
+    Other events may pop the barrier down again and the final pop to 0 will release the 
+    barrier.
+    """
     _pending: int
     _event: Event
 

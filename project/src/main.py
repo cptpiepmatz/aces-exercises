@@ -21,8 +21,8 @@ def evaluate_solution(net):
 if __name__ == "__main__":
     # Additional network evaluation
     log.info("Starting additional network evaluation!")
-    #for net in create_additional_networks():
-    #    evaluate_solution(net)
+    for net in create_additional_networks():
+       evaluate_solution(net)
 
     # The default network evaluation
     log.info("Starting default network evaluation!")
